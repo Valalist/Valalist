@@ -1,0 +1,273 @@
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Meat Riding HUB",
+    LoadingTitle = "Hi this is loading",
+    LoadingSubtitle = "Fuck you",
+    ConfigurationSaving = {
+        Enabled = false
+    },
+    Discord = {
+        Enabled = false
+    },
+    KeySystem = false
+})
+
+local Tab = Window:CreateTab("Main")
+
+local running = false
+local loopConnection
+
+local player = game:GetService("Players").LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local root = character:WaitForChild("HumanoidRootPart")
+
+local earthRingsFolder = workspace.Map.Earth.Collectables.Rings
+local earthSubFolder = earthRingsFolder:WaitForChild("Folder")
+
+local spaceRingsFolder = workspace.Map.Space.Collectables.Rings
+local spaceSubFolder = spaceRingsFolder:WaitForChild("Folder")
+
+local models = {}
+local originalPositions = {}
+
+local function addModel(model)
+    if model:IsA("Model") then
+        if not model.PrimaryPart then
+            local part = model:FindFirstChildWhichIsA("BasePart")
+            if part then
+                model.PrimaryPart = part
+            end
+        end
+        if model.PrimaryPart then
+            table.insert(models, model)
+            if not originalPositions[model] then
+                originalPositions[model] = model.PrimaryPart.CFrame
+            end
+        end
+    end
+end
+
+for _, model in ipairs(earthRingsFolder:GetChildren()) do
+    addModel(model)
+end
+for _, model in ipairs(earthSubFolder:GetChildren()) do
+    addModel(model)
+end
+for _, model in ipairs(spaceRingsFolder:GetChildren()) do
+    addModel(model)
+end
+for _, model in ipairs(spaceSubFolder:GetChildren()) do
+    addModel(model)
+end
+
+earthRingsFolder.ChildAdded:Connect(addModel)
+earthSubFolder.ChildAdded:Connect(addModel)
+spaceRingsFolder.ChildAdded:Connect(addModel)
+spaceSubFolder.ChildAdded:Connect(addModel)
+
+Tab:CreateToggle({
+    Name = "Auto-Collect Rings",
+    CurrentValue = false,
+    Flag = "RingsFollowToggle",
+    Callback = function(state)
+        running = state
+        if running then
+            loopConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if root and root.Parent then
+                    for _, model in ipairs(models) do
+                        if model and model.Parent and model.PrimaryPart then
+                            model:SetPrimaryPartCFrame(root.CFrame)
+                        end
+                    end
+                end
+            end)
+        else
+            if loopConnection then
+                loopConnection:Disconnect()
+                loopConnection = nil
+            end
+            for model, cframe in pairs(originalPositions) do
+                if model and model.Parent and model.PrimaryPart then
+                    model:SetPrimaryPartCFrame(cframe)
+                end
+            end
+        end
+    end,
+})
+
+Tab:CreateLabel("+ This may lag your device!!!")
+
+-- Auto-Collect Coins (excluding MeshParts inside Rings)
+local coinsRunning = false
+local coinsConnection
+local coinOriginalPositions = {}
+local coinParts = {}
+
+local spaceCollectables = workspace.Map.Space:WaitForChild("Collectables")
+local earthCoinsFolder = workspace.Map.Earth.Collectables:WaitForChild("Coins")
+
+local function isInsideRing(part)
+    for _, ringModel in ipairs(models) do
+        if part:IsDescendantOf(ringModel) then
+            return true
+        end
+    end
+    return false
+end
+
+local function addCoin(part)
+    if part:IsA("MeshPart") and not isInsideRing(part) then
+        table.insert(coinParts, part)
+        if not coinOriginalPositions[part] then
+            coinOriginalPositions[part] = part.CFrame
+        end
+    end
+end
+
+local function collectAllParts(folder)
+    for _, obj in ipairs(folder:GetDescendants()) do
+        addCoin(obj)
+    end
+end
+
+collectAllParts(spaceCollectables)
+collectAllParts(earthCoinsFolder)
+
+spaceCollectables.DescendantAdded:Connect(addCoin)
+earthCoinsFolder.DescendantAdded:Connect(addCoin)
+
+Tab:CreateToggle({
+    Name = "Auto-Collect Coins",
+    CurrentValue = false,
+    Flag = "AutoCollectCoinsToggle",
+    Callback = function(state)
+        coinsRunning = state
+        if coinsRunning then
+            coinsConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if root and root.Parent then
+                    for _, part in ipairs(coinParts) do
+                        if part and part.Parent then
+                            part.CFrame = root.CFrame
+                        end
+                    end
+                end
+            end)
+        else
+            if coinsConnection then
+                coinsConnection:Disconnect()
+                coinsConnection = nil
+            end
+            for part, cframe in pairs(coinOriginalPositions) do
+                if part and part.Parent then
+                    part.CFrame = cframe
+                end
+            end
+        end
+    end,
+})
+
+local rebirthRunning = false
+local rebirthConnection
+
+Tab:CreateToggle({
+    Name = "Auto Rebirth",
+    CurrentValue = false,
+    Flag = "AutoRebirthToggle",
+    Callback = function(state)
+        rebirthRunning = state
+        if rebirthRunning then
+            rebirthConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                local button = player.PlayerGui.Main.SideButtons.MiddleFrame.RebirthButton.Image.notification
+                if button and button.Visible then
+                    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Rebirth"):FireServer()
+                end
+            end)
+        else
+            if rebirthConnection then
+                rebirthConnection:Disconnect()
+                rebirthConnection = nil
+            end
+        end
+    end,
+})
+
+local giftsRunning = false
+local giftsConnection
+
+local remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+local claim = remotes:WaitForChild("ClaimTimeReward")
+local rewards = {120, 180, 240, 300, 600, 900, 1800, 3600}
+
+Tab:CreateToggle({
+    Name = "Auto-Claim Gifts",
+    CurrentValue = false,
+    Flag = "AutoClaimGiftsToggle",
+    Callback = function(state)
+        giftsRunning = state
+        if giftsRunning then
+            giftsConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                local notif = player.PlayerGui.Main.SideButtons.BottomFrame.GiftsButton.Image.notification
+                if notif and notif.Visible then
+                    for _, t in ipairs(rewards) do
+                        claim:FireServer(t)
+                        task.wait(0.1)
+                    end
+                end
+            end)
+        else
+            if giftsConnection then
+                giftsConnection:Disconnect()
+                giftsConnection = nil
+            end
+        end
+    end,
+})
+
+local ExtraTab = Window:CreateTab("Extra")
+
+ExtraTab:CreateButton({
+    Name = "Purchase Space",
+    Callback = function()
+        local purchaseFrame = player.PlayerGui:WaitForChild("Frames"):WaitForChild("PurchaseWorld")
+        if purchaseFrame then
+            purchaseFrame.Visible = true
+        end
+    end,
+})
+
+ExtraTab:CreateButton({
+    Name = "Unlock All Areas",
+    Callback = function()
+        local areasFolder = workspace.Map:WaitForChild("Areas")
+        local originalCFrame = root.CFrame
+        for _, part in ipairs(areasFolder:GetChildren()) do
+            if part:IsA("BasePart") then
+                root.CFrame = part.CFrame + Vector3.new(0,5,0)
+                task.wait(0.3)
+            end
+        end
+        root.CFrame = originalCFrame
+    end,
+})
+
+ExtraTab:CreateButton({
+    Name = "Complete-All Quests",
+    Callback = function()
+        local questsFrame = player.PlayerGui:WaitForChild("Frames"):WaitForChild("QuestsFrame")
+        local mainFrame = questsFrame:WaitForChild("Main")
+        local claimRemote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ClaimQuest")
+        for _, quest in ipairs(mainFrame:GetChildren()) do
+            if quest:IsA("Frame") then
+                local args = {quest.Name}
+                claimRemote:FireServer(unpack(args))
+                task.wait(0.1)
+            end
+        end
+    end,
+})
+
+local NoteTab = Window:CreateTab("Note")
+NoteTab:CreateLabel("+ Update V0.3 - Added Complete-All Quests in Extra tab.")
+NoteTab:CreateLabel("+ Update V0.2 - Added Auto-Collect Coins in the Main tab.")
+NoteTab:CreateLabel("+ This script will NOT receive any updates")
