@@ -1,0 +1,81 @@
+if game.PlaceId ~= 136777090671099 then
+    game.Players.LocalPlayer:Kick("Wrong game pal!!")
+    return
+end
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Meat Riding Hub | " .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+   LoadingTitle = "I'm just a bebeh🥺✌️",
+   LoadingSubtitle = "This game so ass",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "MeatRidingHub"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "",
+      RememberJoins = true
+   },
+   KeySystem = false
+})
+
+local Main = Window:CreateTab("Main", 4483362458)
+local Notes = Window:CreateTab("Note", 4483362458)
+
+local AutoCoins = Main:CreateToggle({
+   Name = "Auto-Get Coins",
+   CurrentValue = false,
+   Flag = "AutoCoins",
+   Callback = function(Value)
+       if Value then
+           if getgenv()._toggleLoop == nil then
+               getgenv()._toggleLoop = false
+           end
+           
+           if getgenv()._toggleLoop then
+               getgenv()._toggleLoop = false
+               return
+           end
+           
+           getgenv()._toggleLoop = true
+
+           -- Freeze BestFling GUI text
+           local bestFlingGui = game:GetService("Players").LocalPlayer.PlayerGui.Stats.Main.ScrollingFrame.BestFling
+           local bestFlingVal = bestFlingGui.Text
+           bestFlingGui:GetPropertyChangedSignal("Text"):Connect(function()
+               bestFlingGui.Text = bestFlingVal
+           end)
+
+           -- Freeze BestFling Value
+           local bestFlingValue = game:GetService("Players").LocalPlayer.Misc.BestFling
+           local oldVal = bestFlingValue.Value
+           bestFlingValue.Changed:Connect(function()
+               bestFlingValue.Value = oldVal
+           end)
+
+           game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Flung"):FireServer()
+
+           local args = {
+               99999,
+               0,
+               0,
+               "l90TvNb7j$-[6UbkS:.X,[O}j{hUJOHO"
+           }
+
+           task.spawn(function()
+               while getgenv()._toggleLoop do
+                   game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Rew"):FireServer(unpack(args))
+                   task.wait()
+               end
+           end)
+       else
+           getgenv()._toggleLoop = false
+       end
+   end,
+})
+
+Notes:CreateLabel("+ More features gonna be added soon! Probably..")
+Notes:CreateLabel("+ This game so buns🥺✌️")
