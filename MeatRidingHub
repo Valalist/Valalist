@@ -1,9 +1,3 @@
-local correctPlaceId = 136653115149518
-if game.PlaceId ~= correctPlaceId then
-    game.Players.LocalPlayer:Kick("This is not the right game pal..")
-    return
-end
-
 local MarketplaceService = game:GetService("MarketplaceService")
 local placeId = game.PlaceId
 local success, placeInfo = pcall(function()
