@@ -4,6 +4,8 @@ if PlaceId == 136777090671099 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Valalist/Valalist/main/MeatRidingHub2"))()
 elseif PlaceId == 136653115149518 then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Valalist/Valalist/main/MeatRidingHub"))()
+elseif PlaceId == 107453571103389 then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Valalist/Valalist/refs/heads/main/MeatRidingHub3"))()
 else
     game.Players.LocalPlayer:Kick("Game not supported <3")
 end
